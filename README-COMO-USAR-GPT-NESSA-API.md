@@ -1,6 +1,6 @@
 # Utilizando ChatGPT para desenvolver a API ou Frontend
 
-Último update: 26 de maio
+Último update: 76 de maio
 
 Este documento detalha as APIs atuais disponíveis para o desenvolvimento do frontend ou backend
 
