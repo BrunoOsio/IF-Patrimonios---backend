@@ -1,17 +1,18 @@
 import express from 'express';
 import { postgres } from '../database/db.js';
+import { responseCreated, responseInternalError, responseOK, responseBadRequest, responseUnauthorized } from '../helpers/http/httpResponseUtils.js';
+import { loginRepository } from '../repository/loginRepository.js';
 
 export const loginRouter = express.Router();
 
 //Use this endpoint just testing purposes
 loginRouter.get('/getAllUsers', async (req, res) => {
   try {
-    const { rows } = await postgres.query('SELECT * FROM tb_if_login');
+    const { rows } = await postgres.query(loginRepository.getAllUsers);
     
-    res.status(200).json(rows);
+    responseOK(rows)
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao consultar o banco' });
+    responseInternalError(res, "Error on getting all users", err)
   }
 });
 
@@ -19,11 +20,11 @@ loginRouter.post('/verifyLogin', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const query = 'SELECT * FROM tb_if_login WHERE ds_login = $1';
+    const query = loginRepository.verifyLogin;
     const { rows } = await postgres.query(query, [username]);
 
     if (rows.length === 0) {
-      return res.status(401).json({ message: 'Usuário não encontrado' });
+      responseUnauthorized(res, "User not found")
     }
 
     const user = rows[0];
@@ -33,13 +34,12 @@ loginRouter.post('/verifyLogin', async (req, res) => {
     }
 
     if (userData.pass !== password) {
-      return res.status(401).json({ message: `Senha incorreta: Usuário ${userData.name}` });
+      responseUnauthorized(res, "Password is wrong")
     }
 
-    res.status(200).json({ message: 'Login bem-sucedido', user });
+    responseOK('Login successful')
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao verificar login' });
+    responseInternalError(res, "Error to verify login", err)
   }
 });
 
@@ -47,14 +47,14 @@ loginRouter.post('/createUser', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const checkQuery = 'SELECT * FROM tb_if_login WHERE ds_login = $1';
+    const checkQuery = loginRepository.checkUser;
     const { rows: existingUsers } = await postgres.query(checkQuery, [username]);
 
     if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Usuário já existe' });
+      responseBadRequest(res, "User already exists")
     }
 
-    const insertQuery = 'INSERT INTO tb_if_login (ds_login, ds_senha) VALUES ($1, $2) RETURNING *';
+    const insertQuery = loginRepository.createUser;
     const values = [username, password];
     const { rows } = await postgres.query(insertQuery, values);
 
@@ -63,9 +63,8 @@ loginRouter.post('/createUser', async (req, res) => {
       pass: rows[0].ds_senha
     };
 
-    res.status(201).json({ message: 'Usuário criado com sucesso', user: userData });
+    responseCreated(res, userData);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao criar usuário' });
+    responseInternalError(res, "Error on create user", err)
   }
 });

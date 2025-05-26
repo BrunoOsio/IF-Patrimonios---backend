@@ -36,7 +36,10 @@ DB_PASS=<COLOQUE A SENHA DO SISTEMA AQUI>
 DB_NAME=rodrigosilva
 DB_PORT=5432
 ```
-
+Para rodar o projeto no servidor do IFSUL Gravataí, mude o DB_HOST para:
+```
+DB_HOST=192.168.20.18
+```
 ## Iniciar servidor
 
 Rode no terminal:
